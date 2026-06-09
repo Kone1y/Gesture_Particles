@@ -1,2 +1,43 @@
-// Entry point - will be filled in Task 7
-console.log('Gesture Particles loaded');
+import { ParticleSystem } from './particleSystem.js';
+import { initCamera } from './camera.js';
+import { initUI } from './ui.js';
+
+const canvas = document.getElementById('particleCanvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const ps = new ParticleSystem(canvas, 600);
+ps.init();
+ps.clear();
+
+let lastTime = 0;
+function animate(time) {
+  if (time - lastTime < 16) {
+    requestAnimationFrame(animate);
+    return;
+  }
+  lastTime = time;
+  ps.update();
+  ps.render();
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+window.addEventListener('resize', () => {
+  ps.resize();
+  ps.clear();
+});
+
+initUI(
+  (shape) => ps.setShape(shape),
+  (color) => ps.setColor(color),
+);
+
+initCamera(
+  (gesture) => {
+    ps.updateGesture(gesture.openness, gesture.rotation);
+  },
+).catch((err) => {
+  console.warn('Camera init failed:', err);
+  document.getElementById('gestureStatus').textContent = 'Camera unavailable';
+});
