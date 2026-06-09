@@ -19,12 +19,14 @@ describe('generateStarCluster', () => {
     });
   });
 
-  it('most points cluster near center (3D gaussian distribution)', () => {
+  it('has both body (near center) and ring (far from center) particles', () => {
     const points = generateStarCluster(200, 10);
     const distances = points.map(p => Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z));
-    const sigma = 10 * 5.5;
-    const withinTwoSigma = distances.filter(d => d < sigma * 2).length;
-    expect(withinTwoSigma).toBeGreaterThan(160);
+    const bodyRadius = 10 * 1.5 * 2; // ~2 sigma of body gaussian
+    const body = distances.filter(d => d < bodyRadius).length;
+    const ring = distances.filter(d => d >= 10 * 3).length; // past inner ring edge
+    expect(body).toBeGreaterThan(30);
+    expect(ring).toBeGreaterThan(50);
   });
 });
 

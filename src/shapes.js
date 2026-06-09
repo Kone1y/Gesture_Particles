@@ -1,17 +1,56 @@
-// Star cluster: 3D spherical gaussian distribution
+// Saturn: planet body (spherical core) + tilted ring with Cassini division
 export function generateStarCluster(count, scale = 10) {
   const points = [];
-  for (let i = 0; i < count; i++) {
+  const bodyCount = Math.floor(count * 0.35);
+  const ringCount = count - bodyCount;
+
+  // Planet body: dense spherical core
+  for (let i = 0; i < bodyCount; i++) {
     const theta = Math.acos(2 * Math.random() - 1);
     const phi = Math.random() * Math.PI * 2;
     const u = Math.random() || 1e-10;
-    const r = Math.sqrt(-2 * Math.log(u)) * scale * 5.5;
+    const r = Math.sqrt(-2 * Math.log(u)) * scale * 1.5;
     points.push({
       x: r * Math.sin(theta) * Math.cos(phi),
       y: r * Math.sin(theta) * Math.sin(phi),
       z: r * Math.cos(theta),
     });
   }
+
+  // Ring bands: B ring (bright inner) + Cassini gap + A ring (outer)
+  const tilt = 25 * Math.PI / 180;
+  const sinT = Math.sin(tilt);
+  const cosT = Math.cos(tilt);
+  const rBinner = scale * 3;
+  const rBouter = scale * 5;
+  const rAinner = scale * 5.4;
+  const rAouter = scale * 7.5;
+
+  for (let i = 0; i < ringCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    let r;
+
+    if (Math.random() < 0.75) {
+      // B ring (main bright band)
+      r = rBinner + Math.random() * (rBouter - rBinner);
+    } else {
+      // A ring (outer band, past Cassini division)
+      r = rAinner + Math.random() * (rAouter - rAinner);
+    }
+
+    const thickness = (Math.random() - 0.5) * scale * 0.15;
+
+    // Ring in XZ plane, tilted around X axis
+    const px = r * Math.cos(angle);
+    const py = thickness;
+    const pz = r * Math.sin(angle);
+    points.push({
+      x: px,
+      y: py * cosT - pz * sinT,
+      z: py * sinT + pz * cosT,
+    });
+  }
+
   return points;
 }
 
