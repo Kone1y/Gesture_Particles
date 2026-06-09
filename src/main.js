@@ -6,7 +6,7 @@ const canvas = document.getElementById('particleCanvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const ps = new ParticleSystem(canvas, 600);
+const ps = new ParticleSystem(canvas, 800);
 ps.init();
 ps.clear();
 
@@ -18,7 +18,7 @@ function animate(time) {
   }
   lastTime = time;
   ps.update();
-  ps.render();
+  ps.render(time);
   requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);

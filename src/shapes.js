@@ -1,3 +1,17 @@
+// Star cluster: gaussian distribution with dense core + sparse halo
+export function generateStarCluster(count, scale = 10) {
+  const points = [];
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    // Box-Muller for gaussian radius, denser toward center
+    const u1 = Math.random() || 1e-10;
+    const u2 = Math.random();
+    const r = Math.sqrt(-2 * Math.log(u1)) * scale * 0.28;
+    points.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+  }
+  return points;
+}
+
 // Heart: parametric heart curve
 // x = 16sin^3(t), y = -(13cos(t) - 5cos(2t) - 2cos(3t) - cos(4t))
 export function generateHeart(count, scale = 10) {

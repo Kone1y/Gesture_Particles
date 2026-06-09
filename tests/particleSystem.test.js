@@ -37,14 +37,14 @@ describe('ParticleSystem', () => {
 
   it('updateGesture changes targetScale and targetRotation', () => {
     const ps = new ParticleSystem(canvas, 10);
-    ps.setShape('heart');
+    ps.setShape('starcluster');
 
     ps.updateGesture(1.0, 0.5);
-    expect(ps.targetScale).toBe(2.0);
+    expect(ps.targetScale).toBe(2.3);
     expect(ps.targetRotation).toBe(Math.PI);
 
     ps.updateGesture(0.0, -1.0);
-    expect(ps.targetScale).toBe(0.5);
+    expect(ps.targetScale).toBe(0.3);
     expect(ps.targetRotation).toBe(-Math.PI * 2);
   });
 
@@ -67,9 +67,9 @@ describe('ParticleSystem', () => {
     expect(ps.color).toBe('#00ff00');
   });
 
-  it('supports all 4 shape names', () => {
+  it('supports all 5 shape names', () => {
     const ps = new ParticleSystem(canvas, 10);
-    const shapes = ['heart', 'flower', 'saturn', 'firework'];
+    const shapes = ['starcluster', 'heart', 'flower', 'saturn', 'firework'];
     shapes.forEach(shape => {
       ps.setShape(shape);
       expect(ps.currentShape).toBe(shape);

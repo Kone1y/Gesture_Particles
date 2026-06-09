@@ -25,7 +25,7 @@ export function initUI(onShapeChange, onColorChange) {
     if (e.target.tagName === 'INPUT') return;
     if (e.key === 'f' || e.key === 'F') toggleFullscreen();
 
-    const shapeMap = { '1': 'heart', '2': 'flower', '3': 'saturn', '4': 'firework' };
+    const shapeMap = { '1': 'starcluster', '2': 'heart', '3': 'flower', '4': 'saturn', '5': 'firework' };
     if (shapeMap[e.key]) {
       shapeButtons.forEach((b) => b.classList.remove('active'));
       const target = document.querySelector(`[data-shape="${shapeMap[e.key]}"]`);

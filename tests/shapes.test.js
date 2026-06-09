@@ -1,5 +1,30 @@
 import { describe, it, expect } from 'vitest';
-import { generateHeart, generateFlower, generateSaturn, generateFirework } from '../src/shapes.js';
+import { generateStarCluster, generateHeart, generateFlower, generateSaturn, generateFirework } from '../src/shapes.js';
+
+describe('generateStarCluster', () => {
+  it('returns requested number of points', () => {
+    expect(generateStarCluster(100)).toHaveLength(100);
+    expect(generateStarCluster(500)).toHaveLength(500);
+  });
+
+  it('points have x and y numbers', () => {
+    const points = generateStarCluster(50);
+    points.forEach(p => {
+      expect(typeof p.x).toBe('number');
+      expect(typeof p.y).toBe('number');
+      expect(isNaN(p.x)).toBe(false);
+      expect(isNaN(p.y)).toBe(false);
+    });
+  });
+
+  it('most points cluster near center (gaussian distribution)', () => {
+    const points = generateStarCluster(200, 10);
+    const distances = points.map(p => Math.sqrt(p.x * p.x + p.y * p.y));
+    const withinTwoSigma = distances.filter(d => d < 10 * 0.56).length;
+    // ~95% should be within 2 sigma
+    expect(withinTwoSigma).toBeGreaterThan(170);
+  });
+});
 
 describe('generateHeart', () => {
   it('returns requested number of points', () => {
