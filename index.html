@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gesture Particles</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <canvas id="particleCanvas"></canvas>
+  <video id="webcamVideo" autoplay playsinline></video>
+
+  <!-- Camera preview -->
+  <div id="cameraPreview">
+    <video id="previewVideo" autoplay playsinline muted></video>
+    <canvas id="handCanvas"></canvas>
+    <div id="gestureStatus">No hand detected</div>
+  </div>
+
+  <!-- Control panel -->
+  <div id="controlPanel">
+    <h2>Particle Gesture</h2>
+
+    <div class="panel-section">
+      <label>Shape</label>
+      <div id="shapeSelector">
+        <button class="shape-btn active" data-shape="heart" title="Heart">Heart</button>
+        <button class="shape-btn" data-shape="flower" title="Flower">Flower</button>
+        <button class="shape-btn" data-shape="saturn" title="Saturn">Saturn</button>
+        <button class="shape-btn" data-shape="firework" title="Firework">Firework</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <label>Color</label>
+      <input type="color" id="colorPicker" value="#ff6b9d">
+    </div>
+
+    <div class="panel-section">
+      <button id="fullscreenBtn" title="Toggle Fullscreen">Fullscreen</button>
+    </div>
+  </div>
+
+  <!-- MediaPipe CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
