@@ -1,11 +1,16 @@
-// Star cluster: gaussian distribution with dense core + sparse halo
+// Star cluster: 3D spherical gaussian distribution
 export function generateStarCluster(count, scale = 10) {
   const points = [];
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const u1 = Math.random() || 1e-10;
-    const r = Math.sqrt(-2 * Math.log(u1)) * scale * 5.5;
-    points.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    const theta = Math.acos(2 * Math.random() - 1);
+    const phi = Math.random() * Math.PI * 2;
+    const u = Math.random() || 1e-10;
+    const r = Math.sqrt(-2 * Math.log(u)) * scale * 5.5;
+    points.push({
+      x: r * Math.sin(theta) * Math.cos(phi),
+      y: r * Math.sin(theta) * Math.sin(phi),
+      z: r * Math.cos(theta),
+    });
   }
   return points;
 }

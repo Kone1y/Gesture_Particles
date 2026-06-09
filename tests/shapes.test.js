@@ -7,19 +7,21 @@ describe('generateStarCluster', () => {
     expect(generateStarCluster(500)).toHaveLength(500);
   });
 
-  it('points have x and y numbers', () => {
+  it('points have x, y, z numbers (3D)', () => {
     const points = generateStarCluster(50);
     points.forEach(p => {
       expect(typeof p.x).toBe('number');
       expect(typeof p.y).toBe('number');
+      expect(typeof p.z).toBe('number');
       expect(isNaN(p.x)).toBe(false);
       expect(isNaN(p.y)).toBe(false);
+      expect(isNaN(p.z)).toBe(false);
     });
   });
 
-  it('most points cluster near center (gaussian distribution)', () => {
+  it('most points cluster near center (3D gaussian distribution)', () => {
     const points = generateStarCluster(200, 10);
-    const distances = points.map(p => Math.sqrt(p.x * p.x + p.y * p.y));
+    const distances = points.map(p => Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z));
     const sigma = 10 * 5.5;
     const withinTwoSigma = distances.filter(d => d < sigma * 2).length;
     expect(withinTwoSigma).toBeGreaterThan(160);

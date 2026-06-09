@@ -14,26 +14,21 @@ const SHAPE_FNS = {
   firework: generateFirework,
 };
 
+const SHAPE_3D = new Set(['starcluster']);
+
 const SMOOTH = 0.06;
 const LERP_SPEED = 0.045;
 const DAMPING = 0.88;
 const TRAIL_ALPHA = 0.1;
 const PARTICLE_COUNT = 800;
 
-function hexToRgb(hex) {
-  return {
-    r: parseInt(hex.slice(1, 3), 16),
-    g: parseInt(hex.slice(3, 5), 16),
-    b: parseInt(hex.slice(5, 7), 16),
-  };
-}
-
 function generateStarColor(baseHex) {
-  const base = hexToRgb(baseHex);
-  // Shift hue randomly to create variety around the base color
+  const r0 = parseInt(baseHex.slice(1, 3), 16);
+  const g0 = parseInt(baseHex.slice(3, 5), 16);
+  const b0 = parseInt(baseHex.slice(5, 7), 16);
   const hueShift = (Math.random() - 0.5) * 120;
   const satShift = (Math.random() - 0.5) * 0.3;
-  const [h, s, l] = rgbToHsl(base.r, base.g, base.b);
+  const [h, s, l] = rgbToHsl(r0, g0, b0);
   const [r, g, b] = hslToRgb(
     (h + hueShift / 360 + 1) % 1,
     Math.max(0.1, Math.min(1, s + satShift)),
@@ -108,22 +103,26 @@ export class ParticleSystem {
     const points = SHAPE_FNS[name](this.particleCount, this.shapeScale);
     const cx = this.canvas.width / 2;
     const cy = this.canvas.height / 2;
+    const is3D = SHAPE_3D.has(name);
 
     if (this.particles.length === 0) {
       this.particles = points.map(p => ({
         x: cx, y: cy, vx: 0, vy: 0,
-        baseTargetX: p.x + cx,
-        baseTargetY: p.y + cy,
+        baseTargetX: p.x,
+        baseTargetY: p.y,
+        baseTargetZ: p.z || 0,
         size: 0.8 + Math.random() * 2.5,
         alpha: 0.5 + Math.random() * 0.5,
         twinkleSpeed: 0.5 + Math.random() * 2,
         twinkleOffset: Math.random() * Math.PI * 2,
         cr: 200, cg: 220, cb: 255,
+        depth: 1,
       }));
     } else {
       points.forEach((p, i) => {
-        this.particles[i].baseTargetX = p.x + cx;
-        this.particles[i].baseTargetY = p.y + cy;
+        this.particles[i].baseTargetX = p.x;
+        this.particles[i].baseTargetY = p.y;
+        this.particles[i].baseTargetZ = p.z || 0;
       });
     }
   }
@@ -153,41 +152,72 @@ export class ParticleSystem {
 
     const cx = this.canvas.width / 2;
     const cy = this.canvas.height / 2;
+    const is3D = SHAPE_3D.has(this.currentShape);
+    const fov = Math.min(this.canvas.width, this.canvas.height) * 0.9;
     const cos = Math.cos(this.rotation);
     const sin = Math.sin(this.rotation);
-    // Stronger pull when scale is small (gravitational collapse feel)
     const pullStrength = LERP_SPEED + (1 - Math.min(this.scale, 3) / 3) * 0.04;
 
-    for (const p of this.particles) {
-      const dx = p.baseTargetX - cx;
-      const dy = p.baseTargetY - cy;
-      const sx = dx * this.scale;
-      const sy = dy * this.scale;
-      const tx = sx * cos - sy * sin + cx;
-      const ty = sx * sin + sy * cos + cy;
+    if (is3D) {
+      for (const p of this.particles) {
+        const sx = p.baseTargetX * this.scale;
+        const sy = p.baseTargetY * this.scale;
+        const sz = p.baseTargetZ * this.scale;
 
-      p.vx += (tx - p.x) * pullStrength;
-      p.vy += (ty - p.y) * pullStrength;
-      p.vx *= DAMPING;
-      p.vy *= DAMPING;
-      p.x += p.vx;
-      p.y += p.vy;
+        // Y-axis rotation
+        const rx = sx * cos + sz * sin;
+        const rz = -sx * sin + sz * cos;
+
+        // Perspective projection
+        const depth = rz + fov;
+        const factor = fov / Math.max(depth, 1);
+        const tx = rx * factor + cx;
+        const ty = sy * factor + cy;
+
+        p.vx += (tx - p.x) * pullStrength;
+        p.vy += (ty - p.y) * pullStrength;
+        p.vx *= DAMPING;
+        p.vy *= DAMPING;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.depth = factor;
+      }
+    } else {
+      for (const p of this.particles) {
+        const dx = p.baseTargetX;
+        const dy = p.baseTargetY;
+        const sx = dx * this.scale;
+        const sy = dy * this.scale;
+        const tx = sx * cos - sy * sin + cx;
+        const ty = sx * sin + sy * cos + cy;
+
+        p.vx += (tx - p.x) * pullStrength;
+        p.vy += (ty - p.y) * pullStrength;
+        p.vx *= DAMPING;
+        p.vy *= DAMPING;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.depth = 1;
+      }
     }
   }
 
   render(time = 0) {
     const { ctx, canvas, particles } = this;
 
-    // Deep space trail
     ctx.fillStyle = `rgba(6, 6, 18, ${TRAIL_ALPHA})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Glow layer (additive blending for star feel)
+    // Depth sort: farthest first (back to front)
+    particles.sort((a, b) => a.depth - b.depth);
+
+    // Glow layer (additive blending)
     ctx.globalCompositeOperation = 'lighter';
     for (const p of particles) {
+      const d = Math.max(0.3, Math.min(1.8, p.depth));
       const twinkle = 0.7 + 0.3 * Math.sin(time * 0.001 * p.twinkleSpeed + p.twinkleOffset);
-      const a = p.alpha * twinkle;
-      const r = p.size * (0.5 + this.scale * 0.3);
+      const a = p.alpha * twinkle * (0.3 + 0.7 * d);
+      const r = p.size * d * (0.5 + this.scale * 0.2);
       const glowR = Math.max(1, r * 4);
 
       const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
@@ -203,10 +233,11 @@ export class ParticleSystem {
     // Core bright dot per star
     ctx.globalCompositeOperation = 'source-over';
     for (const p of particles) {
+      const d = Math.max(0.3, Math.min(1.8, p.depth));
       const twinkle = 0.7 + 0.3 * Math.sin(time * 0.001 * p.twinkleSpeed + p.twinkleOffset);
-      const a = p.alpha * twinkle;
+      const a = p.alpha * twinkle * (0.3 + 0.7 * d);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, Math.max(0.5, p.size * 0.4), 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, Math.max(0.5, p.size * 0.4 * d), 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${p.cr},${p.cg},${p.cb},${a.toFixed(3)})`;
       ctx.fill();
     }
@@ -225,12 +256,10 @@ export class ParticleSystem {
     this.canvas.height = window.innerHeight;
     this.shapeScale = Math.min(this.canvas.width, this.canvas.height) * 0.018;
     const ratio = this.shapeScale / oldScale;
-    const cx = this.canvas.width / 2;
-    const cy = this.canvas.height / 2;
-
     for (const p of this.particles) {
-      p.baseTargetX = (p.baseTargetX - cx) * ratio + cx;
-      p.baseTargetY = (p.baseTargetY - cy) * ratio + cy;
+      p.baseTargetX *= ratio;
+      p.baseTargetY *= ratio;
+      p.baseTargetZ *= ratio;
     }
   }
 }

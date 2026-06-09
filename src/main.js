@@ -33,9 +33,17 @@ initUI(
   (color) => ps.setColor(color),
 );
 
+let autoRotate = 0;
+
 initCamera(
   (gesture) => {
     ps.updateGesture(gesture.openness, gesture.rotation);
+    if (!gesture.detected) {
+      autoRotate += 0.003;
+      ps.targetRotation = autoRotate;
+    } else {
+      autoRotate = ps.targetRotation;
+    }
   },
 ).then(() => {
   document.getElementById('loadingOverlay').classList.add('hidden');
