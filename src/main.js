@@ -37,7 +37,10 @@ initCamera(
   (gesture) => {
     ps.updateGesture(gesture.openness, gesture.rotation);
   },
-).catch((err) => {
+).then(() => {
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}).catch((err) => {
   console.warn('Camera init failed:', err);
   document.getElementById('gestureStatus').textContent = 'Camera unavailable';
+  document.getElementById('loadingOverlay').classList.add('hidden');
 });

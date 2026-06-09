@@ -43,6 +43,10 @@ export class ParticleSystem {
   init() {
     this.shapeScale = Math.min(this.canvas.width, this.canvas.height) * 0.018;
     this.setShape(this.currentShape);
+    for (const p of this.particles) {
+      p.x = Math.random() * this.canvas.width;
+      p.y = Math.random() * this.canvas.height;
+    }
   }
 
   setShape(name) {

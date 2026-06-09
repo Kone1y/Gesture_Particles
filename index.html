@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <div id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <p>Initializing camera...</p>
+  </div>
+
   <canvas id="particleCanvas"></canvas>
   <video id="webcamVideo" autoplay playsinline></video>
 
@@ -38,6 +43,11 @@
 
     <div class="panel-section">
       <button id="fullscreenBtn" title="Toggle Fullscreen">Fullscreen</button>
+    </div>
+
+    <div class="panel-section hints">
+      <span>1-4: Shapes</span>
+      <span>F: Fullscreen</span>
     </div>
   </div>
 
