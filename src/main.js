@@ -6,7 +6,7 @@ const canvas = document.getElementById('particleCanvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const ps = new ParticleSystem(canvas, 800);
+const ps = new ParticleSystem(canvas, 2000);
 ps.init();
 ps.clear();
 

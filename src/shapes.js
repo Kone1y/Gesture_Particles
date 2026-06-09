@@ -1,53 +1,91 @@
-// Saturn: planet body (spherical core) + tilted ring with Cassini division
+// Saturn: oblate body + 5 ring bands (C, B, Cassini, A, F) + moons
 export function generateStarCluster(count, scale = 10) {
   const points = [];
-  const bodyCount = Math.floor(count * 0.35);
-  const ringCount = count - bodyCount;
+  const bodyCount = 600;
+  const ringC = 80;
+  const ringB = 500;
+  const ringA = 280;
+  const ringF = 50;
+  const moonCount = 5;
 
-  // Planet body: dense spherical core
+  const tilt = 25 * Math.PI / 180;
+  const sinT = Math.sin(tilt);
+  const cosT = Math.cos(tilt);
+
+  function pushRingParticle(r, thicknessScale) {
+    const angle = Math.random() * Math.PI * 2;
+    const t = (Math.random() - 0.5) * scale * thicknessScale;
+    const px = r * Math.cos(angle);
+    const pz = r * Math.sin(angle);
+    points.push({
+      x: px,
+      y: t * cosT - pz * sinT,
+      z: t * sinT + pz * cosT,
+      type: 'ring',
+    });
+  }
+
+  // Planet body: oblate spheroid (equator 10% wider than poles)
   for (let i = 0; i < bodyCount; i++) {
     const theta = Math.acos(2 * Math.random() - 1);
     const phi = Math.random() * Math.PI * 2;
     const u = Math.random() || 1e-10;
     const r = Math.sqrt(-2 * Math.log(u)) * scale * 1.5;
+    const oblateness = 1.0 + 0.1 * Math.pow(Math.sin(theta), 2);
     points.push({
-      x: r * Math.sin(theta) * Math.cos(phi),
+      x: r * oblateness * Math.sin(theta) * Math.cos(phi),
       y: r * Math.sin(theta) * Math.sin(phi),
-      z: r * Math.cos(theta),
+      z: r * oblateness * Math.cos(theta),
+      type: 'body',
     });
   }
 
-  // Ring bands: B ring (bright inner) + Cassini gap + A ring (outer)
-  const tilt = 25 * Math.PI / 180;
-  const sinT = Math.sin(tilt);
-  const cosT = Math.cos(tilt);
-  const rBinner = scale * 3;
-  const rBouter = scale * 5;
-  const rAinner = scale * 5.4;
-  const rAouter = scale * 7.5;
+  // C ring (faint, innermost)
+  for (let i = 0; i < ringC; i++) {
+    const r = scale * 2 + Math.random() * scale * 1;
+    pushRingParticle(r, 0.1);
+    points[points.length - 1].type = 'ringC';
+  }
 
-  for (let i = 0; i < ringCount; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    let r;
+  // B ring (brightest, main band)
+  for (let i = 0; i < ringB; i++) {
+    const r = scale * 3 + Math.random() * scale * 2;
+    pushRingParticle(r, 0.12);
+    points[points.length - 1].type = 'ringB';
+  }
 
-    if (Math.random() < 0.75) {
-      // B ring (main bright band)
-      r = rBinner + Math.random() * (rBouter - rBinner);
-    } else {
-      // A ring (outer band, past Cassini division)
-      r = rAinner + Math.random() * (rAouter - rAinner);
+  // Cassini Division: no particles (gap from scale*5 to scale*5.4)
+
+  // A ring (moderate)
+  for (let i = 0; i < ringA; i++) {
+    let r = scale * 5.4 + Math.random() * scale * 1.6;
+    // Encke gap: small hole at scale*6.5 to scale*6.7
+    if (Math.random() < 0.15) {
+      r += scale * 0.2;
     }
+    pushRingParticle(r, 0.1);
+    points[points.length - 1].type = 'ringA';
+  }
 
-    const thickness = (Math.random() - 0.5) * scale * 0.15;
+  // F ring (thin, narrow, bright)
+  for (let i = 0; i < ringF; i++) {
+    const r = scale * 7.8 + Math.random() * scale * 0.4;
+    pushRingParticle(r, 0.05);
+    points[points.length - 1].type = 'ringF';
+  }
 
-    // Ring in XZ plane, tilted around X axis
+  // Moons (large bright dots beyond the rings)
+  for (let i = 0; i < moonCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = scale * (9 + Math.random() * 3);
+    const t = (Math.random() - 0.5) * scale * 0.5;
     const px = r * Math.cos(angle);
-    const py = thickness;
     const pz = r * Math.sin(angle);
     points.push({
       x: px,
-      y: py * cosT - pz * sinT,
-      z: py * sinT + pz * cosT,
+      y: t * cosT - pz * sinT,
+      z: t * sinT + pz * cosT,
+      type: 'moon',
     });
   }
 

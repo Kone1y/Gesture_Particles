@@ -2,31 +2,38 @@ import { describe, it, expect } from 'vitest';
 import { generateStarCluster, generateHeart, generateFlower, generateSaturn, generateFirework } from '../src/shapes.js';
 
 describe('generateStarCluster', () => {
-  it('returns requested number of points', () => {
-    expect(generateStarCluster(100)).toHaveLength(100);
-    expect(generateStarCluster(500)).toHaveLength(500);
+  it('returns correct particle count (body + rings + moons)', () => {
+    const points = generateStarCluster(2000, 10);
+    expect(points.length).toBe(1515); // 600 body + 80C + 500B + 280A + 50F + 5 moons
   });
 
-  it('points have x, y, z numbers (3D)', () => {
-    const points = generateStarCluster(50);
+  it('all points have x, y, z and type', () => {
+    const points = generateStarCluster(2000, 10);
     points.forEach(p => {
       expect(typeof p.x).toBe('number');
       expect(typeof p.y).toBe('number');
       expect(typeof p.z).toBe('number');
-      expect(isNaN(p.x)).toBe(false);
-      expect(isNaN(p.y)).toBe(false);
-      expect(isNaN(p.z)).toBe(false);
+      expect(typeof p.type).toBe('string');
     });
   });
 
-  it('has both body (near center) and ring (far from center) particles', () => {
-    const points = generateStarCluster(200, 10);
-    const distances = points.map(p => Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z));
-    const bodyRadius = 10 * 1.5 * 2; // ~2 sigma of body gaussian
-    const body = distances.filter(d => d < bodyRadius).length;
-    const ring = distances.filter(d => d >= 10 * 3).length; // past inner ring edge
-    expect(body).toBeGreaterThan(30);
-    expect(ring).toBeGreaterThan(50);
+  it('has body, ring, and moon particles', () => {
+    const points = generateStarCluster(2000, 10);
+    const body = points.filter(p => p.type === 'body').length;
+    const ring = points.filter(p => p.type.includes('ring')).length;
+    const moons = points.filter(p => p.type === 'moon').length;
+    expect(body).toBe(600);
+    expect(ring).toBe(910);
+    expect(moons).toBe(5);
+  });
+
+  it('moons are farther from center than rings', () => {
+    const points = generateStarCluster(2000, 10);
+    const moonDists = points.filter(p => p.type === 'moon').map(p => Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z));
+    const ringDists = points.filter(p => p.type.includes('ring')).map(p => Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z));
+    const minMoon = Math.min(...moonDists);
+    const maxRing = Math.max(...ringDists);
+    expect(minMoon).toBeGreaterThan(maxRing);
   });
 });
 

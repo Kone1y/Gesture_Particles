@@ -20,7 +20,18 @@ const SMOOTH = 0.06;
 const LERP_SPEED = 0.045;
 const DAMPING = 0.88;
 const TRAIL_ALPHA = 0.1;
-const PARTICLE_COUNT = 800;
+const PARTICLE_COUNT = 2000;
+const BG_STAR_COUNT = 200;
+
+const TYPE_PROPS = {
+  body:  { sizeMin: 1.5, sizeMax: 4.0, alphaMin: 0.7, alphaMax: 1.0 },
+  ringC: { sizeMin: 0.3, sizeMax: 1.0, alphaMin: 0.15, alphaMax: 0.3 },
+  ringB: { sizeMin: 0.5, sizeMax: 2.0, alphaMin: 0.4, alphaMax: 0.8 },
+  ringA: { sizeMin: 0.5, sizeMax: 2.0, alphaMin: 0.3, alphaMax: 0.6 },
+  ringF: { sizeMin: 0.3, sizeMax: 0.8, alphaMin: 0.3, alphaMax: 0.5 },
+  moon:  { sizeMin: 3.0, sizeMax: 6.0, alphaMin: 0.9, alphaMax: 1.0 },
+  ring:  { sizeMin: 0.5, sizeMax: 2.0, alphaMin: 0.3, alphaMax: 0.6 },
+};
 
 function generateStarColor(baseHex) {
   const r0 = parseInt(baseHex.slice(1, 3), 16);
@@ -78,6 +89,7 @@ export class ParticleSystem {
     this.ctx = canvas.getContext('2d');
     this.particleCount = particleCount;
     this.particles = [];
+    this.bgStars = [];
     this.currentShape = 'starcluster';
     this.color = '#a0c4ff';
     this.scale = 1;
@@ -89,11 +101,28 @@ export class ParticleSystem {
 
   init() {
     this.shapeScale = Math.min(this.canvas.width, this.canvas.height) * 0.018;
+    this.initBgStars();
     this.setShape(this.currentShape);
     this.assignColors();
     for (const p of this.particles) {
       p.x = Math.random() * this.canvas.width;
       p.y = Math.random() * this.canvas.height;
+    }
+  }
+
+  initBgStars() {
+    this.bgStars = [];
+    for (let i = 0; i < BG_STAR_COUNT; i++) {
+      const c = generateStarColor('#ffffff');
+      this.bgStars.push({
+        x: Math.random() * this.canvas.width,
+        y: Math.random() * this.canvas.height,
+        size: 0.2 + Math.random() * 0.5,
+        alpha: 0.1 + Math.random() * 0.3,
+        twinkleSpeed: 0.3 + Math.random() * 1.5,
+        twinkleOffset: Math.random() * Math.PI * 2,
+        cr: c.r, cg: c.g, cb: c.b,
+      });
     }
   }
 
@@ -103,27 +132,49 @@ export class ParticleSystem {
     const points = SHAPE_FNS[name](this.particleCount, this.shapeScale);
     const cx = this.canvas.width / 2;
     const cy = this.canvas.height / 2;
-    const is3D = SHAPE_3D.has(name);
 
     if (this.particles.length === 0) {
-      this.particles = points.map(p => ({
-        x: cx, y: cy, vx: 0, vy: 0,
-        baseTargetX: p.x,
-        baseTargetY: p.y,
-        baseTargetZ: p.z || 0,
-        size: 0.8 + Math.random() * 2.5,
-        alpha: 0.5 + Math.random() * 0.5,
-        twinkleSpeed: 0.5 + Math.random() * 2,
-        twinkleOffset: Math.random() * Math.PI * 2,
-        cr: 200, cg: 220, cb: 255,
-        depth: 1,
-      }));
+      this.particles = points.map(p => {
+        const props = TYPE_PROPS[p.type] || TYPE_PROPS.ring;
+        return {
+          x: cx, y: cy, vx: 0, vy: 0,
+          baseTargetX: p.x,
+          baseTargetY: p.y,
+          baseTargetZ: p.z || 0,
+          size: props.sizeMin + Math.random() * (props.sizeMax - props.sizeMin),
+          alpha: props.alphaMin + Math.random() * (props.alphaMax - props.alphaMin),
+          twinkleSpeed: 0.5 + Math.random() * 2,
+          twinkleOffset: Math.random() * Math.PI * 2,
+          cr: 200, cg: 220, cb: 255,
+          depth: 1,
+          type: p.type || 'ring',
+        };
+      });
     } else {
       points.forEach((p, i) => {
-        this.particles[i].baseTargetX = p.x;
-        this.particles[i].baseTargetY = p.y;
-        this.particles[i].baseTargetZ = p.z || 0;
+        if (i < this.particles.length) {
+          this.particles[i].baseTargetX = p.x;
+          this.particles[i].baseTargetY = p.y;
+          this.particles[i].baseTargetZ = p.z || 0;
+          this.particles[i].type = p.type || 'ring';
+        }
       });
+      // Trim or pad particle count
+      while (this.particles.length > points.length) this.particles.pop();
+      for (let i = this.particles.length; i < points.length; i++) {
+        const p = points[i];
+        const props = TYPE_PROPS[p.type] || TYPE_PROPS.ring;
+        this.particles.push({
+          x: cx, y: cy, vx: 0, vy: 0,
+          baseTargetX: p.x, baseTargetY: p.y, baseTargetZ: p.z || 0,
+          size: props.sizeMin + Math.random() * (props.sizeMax - props.sizeMin),
+          alpha: props.alphaMin + Math.random() * (props.alphaMax - props.alphaMin),
+          twinkleSpeed: 0.5 + Math.random() * 2,
+          twinkleOffset: Math.random() * Math.PI * 2,
+          cr: 200, cg: 220, cb: 255,
+          depth: 1, type: p.type || 'ring',
+        });
+      }
     }
   }
 
@@ -163,17 +214,12 @@ export class ParticleSystem {
         const sx = p.baseTargetX * this.scale;
         const sy = p.baseTargetY * this.scale;
         const sz = p.baseTargetZ * this.scale;
-
-        // Y-axis rotation
         const rx = sx * cos + sz * sin;
         const rz = -sx * sin + sz * cos;
-
-        // Perspective projection
         const depth = rz + fov;
         const factor = fov / Math.max(depth, 1);
         const tx = rx * factor + cx;
         const ty = sy * factor + cy;
-
         p.vx += (tx - p.x) * pullStrength;
         p.vy += (ty - p.y) * pullStrength;
         p.vx *= DAMPING;
@@ -184,13 +230,10 @@ export class ParticleSystem {
       }
     } else {
       for (const p of this.particles) {
-        const dx = p.baseTargetX;
-        const dy = p.baseTargetY;
-        const sx = dx * this.scale;
-        const sy = dy * this.scale;
+        const sx = p.baseTargetX * this.scale;
+        const sy = p.baseTargetY * this.scale;
         const tx = sx * cos - sy * sin + cx;
         const ty = sx * sin + sy * cos + cy;
-
         p.vx += (tx - p.x) * pullStrength;
         p.vy += (ty - p.y) * pullStrength;
         p.vx *= DAMPING;
@@ -203,22 +246,36 @@ export class ParticleSystem {
   }
 
   render(time = 0) {
-    const { ctx, canvas, particles } = this;
+    const { ctx, canvas, particles, bgStars } = this;
 
     ctx.fillStyle = `rgba(6, 6, 18, ${TRAIL_ALPHA})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Depth sort: farthest first (back to front)
+    // Background stars (static, no gesture influence)
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of bgStars) {
+      const twinkle = 0.5 + 0.5 * Math.sin(time * 0.001 * s.twinkleSpeed + s.twinkleOffset);
+      const a = s.alpha * twinkle;
+      const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 3);
+      grad.addColorStop(0, `rgba(${s.cr},${s.cg},${s.cb},${a.toFixed(3)})`);
+      grad.addColorStop(1, `rgba(${s.cr},${s.cg},${s.cb},0)`);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * 3, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // Sort Saturn particles by depth (farthest first)
     particles.sort((a, b) => a.depth - b.depth);
 
-    // Glow layer (additive blending)
+    // Glow layer
     ctx.globalCompositeOperation = 'lighter';
     for (const p of particles) {
       const d = Math.max(0.3, Math.min(1.8, p.depth));
       const twinkle = 0.7 + 0.3 * Math.sin(time * 0.001 * p.twinkleSpeed + p.twinkleOffset);
       const a = p.alpha * twinkle * (0.3 + 0.7 * d);
-      const r = p.size * d * (0.5 + this.scale * 0.2);
-      const glowR = Math.max(1, r * 4);
+      const r = p.size * d * (0.5 + this.scale * 0.15);
+      const glowR = Math.max(1, r * (p.type === 'moon' ? 5 : 4));
 
       const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
       grad.addColorStop(0, `rgba(${p.cr},${p.cg},${p.cb},${(a * 0.8).toFixed(3)})`);
@@ -230,7 +287,7 @@ export class ParticleSystem {
       ctx.fill();
     }
 
-    // Core bright dot per star
+    // Core bright dots
     ctx.globalCompositeOperation = 'source-over';
     for (const p of particles) {
       const d = Math.max(0.3, Math.min(1.8, p.depth));
@@ -261,5 +318,6 @@ export class ParticleSystem {
       p.baseTargetY *= ratio;
       p.baseTargetZ *= ratio;
     }
+    this.initBgStars();
   }
 }

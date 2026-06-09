@@ -21,6 +21,12 @@ describe('ParticleSystem', () => {
     expect(ps.particles).toHaveLength(100);
   });
 
+  it('starcluster uses its own fixed count', () => {
+    const ps = new ParticleSystem(canvas, 10);
+    ps.setShape('starcluster');
+    expect(ps.particles.length).toBe(1515);
+  });
+
   it('setShape updates all particle targets', () => {
     const ps = new ParticleSystem(canvas, 50);
     ps.setShape('heart');
