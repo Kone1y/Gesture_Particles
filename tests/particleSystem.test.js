@@ -40,11 +40,11 @@ describe('ParticleSystem', () => {
     ps.setShape('starcluster');
 
     ps.updateGesture(1.0, 0.5);
-    expect(ps.targetScale).toBe(2.3);
+    expect(ps.targetScale).toBe(2.65);
     expect(ps.targetRotation).toBe(Math.PI);
 
     ps.updateGesture(0.0, -1.0);
-    expect(ps.targetScale).toBe(0.3);
+    expect(ps.targetScale).toBe(0.15);
     expect(ps.targetRotation).toBe(-Math.PI * 2);
   });
 

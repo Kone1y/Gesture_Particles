@@ -143,7 +143,7 @@ export class ParticleSystem {
   }
 
   updateGesture(openness, rotation) {
-    this.targetScale = 0.3 + openness * 2.0;
+    this.targetScale = 0.15 + openness * 2.5;
     this.targetRotation = rotation * Math.PI * 2;
   }
 
@@ -156,7 +156,7 @@ export class ParticleSystem {
     const cos = Math.cos(this.rotation);
     const sin = Math.sin(this.rotation);
     // Stronger pull when scale is small (gravitational collapse feel)
-    const pullStrength = LERP_SPEED + (1 - Math.min(this.scale, 2) / 2) * 0.02;
+    const pullStrength = LERP_SPEED + (1 - Math.min(this.scale, 3) / 3) * 0.04;
 
     for (const p of this.particles) {
       const dx = p.baseTargetX - cx;

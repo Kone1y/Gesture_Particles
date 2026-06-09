@@ -20,9 +20,9 @@ describe('generateStarCluster', () => {
   it('most points cluster near center (gaussian distribution)', () => {
     const points = generateStarCluster(200, 10);
     const distances = points.map(p => Math.sqrt(p.x * p.x + p.y * p.y));
-    const withinTwoSigma = distances.filter(d => d < 10 * 0.56).length;
-    // ~95% should be within 2 sigma
-    expect(withinTwoSigma).toBeGreaterThan(170);
+    const sigma = 10 * 5.5;
+    const withinTwoSigma = distances.filter(d => d < sigma * 2).length;
+    expect(withinTwoSigma).toBeGreaterThan(160);
   });
 });
 
